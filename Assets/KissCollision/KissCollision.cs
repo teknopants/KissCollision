@@ -5,7 +5,7 @@ using UnityEngine;
 
 public static class KissCollision
 {
-    private static readonly float skin = .01f;
+    private static readonly float skin = .001f;
     private static readonly int pushOutAttempts = 10;
 
     /// <summary>
@@ -14,6 +14,8 @@ public static class KissCollision
     /// </summary>
     public static MotionPath ProjectCapsule(CapsuleCollider capsuleCollider, Vector3 motion, LayerMask layerMask, int steps = 3)
     {
+        Vector3 initialMovement = motion;
+
         RaycastHit[] collisions = new RaycastHit[steps];
         Vector3[] motionSteps = new Vector3[steps];
         Vector3 startPosition = capsuleCollider.transform.position;
@@ -47,10 +49,20 @@ public static class KissCollision
             float remainingDistance = motion.magnitude - stepDistance;
             motion = Vector3.ProjectOnPlane(motion.normalized, hit.normal) * remainingDistance;
 
+            // if motion goes back on inital vector, project onto initial vector plane
+            Debug.Log(Vector3.Dot(initialMovement, motion));
+            if (Vector3.Dot(initialMovement, motion) < 0)
+            {
+                motion = Vector3.ProjectOnPlane(motion, initialMovement.normalized);
+            }
+
             // if in wall, try to push out
             for (var j = 0; j < pushOutAttempts; j++)
             {
-                foreach (Collider collider in Physics.OverlapCapsule(point0, point1, capsuleCollider.radius, layerMask))
+                Collider[] colliders = Physics.OverlapCapsule(point0, point1, capsuleCollider.radius, layerMask);
+                if (colliders.Length == 0) { break; }
+
+                foreach (Collider collider in colliders)
                 {
                     Physics.ComputePenetration(capsuleCollider, point0, capsuleCollider.transform.rotation, collider, collider.transform.position, collider.transform.rotation, out Vector3 pushOutDirection, out float pushOutDistance);
                     point0 += pushOutDirection * pushOutDistance;
