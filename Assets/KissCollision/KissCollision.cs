@@ -18,10 +18,10 @@ public static class KissCollision
         MotionPath motionPath = ProjectCapsule(capsuleCollider, motion, layerMask);
         capsuleCollider.transform.position = motionPath.EndPosition;
 
-        velocityResult = motionPath.EndVelocity.normalized * motion.magnitude;
-        if (motionPath.Collisions.Length > 0)
+        velocityResult = motion;
+        foreach(var hit in motionPath.Collisions)
         {
-            velocityResult = motionPath.EndVelocity;
+            velocityResult = Vector3.ProjectOnPlane(velocityResult, hit.normal);
         }
 
         return motionPath;
