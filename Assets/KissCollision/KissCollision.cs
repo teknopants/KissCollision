@@ -39,11 +39,9 @@ public static class KissCollision
         Vector3[] motionSteps = new Vector3[1];
         Vector3 startPosition = capsuleCollider.transform.position;
 
-        float height = Mathf.Clamp01(capsuleCollider.height - 1);
+        float height = Mathf.Max(0, capsuleCollider.height - 1);
         Vector3 point0 = startPosition - height * capsuleCollider.transform.up / 2;
         Vector3 point1 = point0 + height * capsuleCollider.transform.up;
-        Debug.DrawLine(point0, point0 + Vector3.right * 100, Color.red, 1/ 60f);
-        Debug.DrawLine(point1, point1 + Vector3.right * 100, Color.blue, 1/ 60f);
 
         for (var i = 0; i < steps; i++)
         {
@@ -78,7 +76,6 @@ public static class KissCollision
             {
                 motion = Vector3.ProjectOnPlane(motion, initialMovement.normalized);
             }
-
 
             // if in wall, try to push out
             for (var j = 0; j < pushOutAttempts; j++)
