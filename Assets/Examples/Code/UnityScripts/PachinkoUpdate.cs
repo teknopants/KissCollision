@@ -9,19 +9,19 @@ public class PachinkoUpdate: MonoBehaviour
 
     public void Update()
     {
-        timer += Time.DeltaTime;
+        timer += Time.deltaTime;
         if (timer > spawnBallTime)
         {
             timer -= spawnBallTime;
             var newBall = Instantiate(ballPrefab);
             var velocity = newBall.AddComponent<Velocity>();
-            velocity.y = Random.Range(0.9, 2);
+            velocity.velocity.y = Random.Range(0.9f, 2);
         }
 
         // Check all entities with a Velocity Component Attatched
         foreach (Velocity velocity in Object.FindObjectsOfType<Velocity>())
         {
-            var entity = player.gameObject;
+            var entity = velocity.gameObject;
             var collide = entity.GetComponent<Collide>();
 
             if (!collide)
@@ -31,7 +31,15 @@ public class PachinkoUpdate: MonoBehaviour
             }
 
             // Project motion
-            KissCollision.MotionPath motionPath = KissCollision.ProjectCapsule(player.GetComponent<CapsuleCollider>(), motion, collide.layerMask);
+            KissCollision.MotionPath motionPath = KissCollision.ProjectCapsule(entity.GetComponent<CapsuleCollider>(), velocity.velocity, collide.layerMask);
+
+            foreach(RaycastHit hit in motionPath.Collisions)
+            {
+                if (hit.normal.sqrMagnitude == 0) {continue;}
+
+                velocity.velocity = Vector3.Reflect(velocity.velocity, hit.normal);
+                Debug.DrawRay(hit.point, velocity.velocity * 10, Color.green, 4);
+            }
 
             entity.gameObject.transform.position = motionPath.EndPosition;
         }
