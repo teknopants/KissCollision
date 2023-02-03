@@ -59,10 +59,10 @@
     <Compile Include="Assets\Examples\Code\Components\CollisionRadius.cs" />
     <Compile Include="Assets\Examples\Code\Components\MouseInput.cs" />
     <Compile Include="Assets\Examples\Code\Components\PreviousPositions.cs" />
-    <Compile Include="Assets\Examples\Code\GameControllers\Game.cs" />
+    <Compile Include="Assets\Examples\Code\Games\Game.cs" />
     <Compile Include="Assets\Examples\Code\Engines\VelocityEngine.cs" />
     <Compile Include="Assets\KissCollision\KissCollision.cs" />
-    <Compile Include="Assets\Examples\Code\InputClasses\Button.cs" />
+    <Compile Include="Assets\Examples\Code\Input\Button.cs" />
     <Compile Include="Assets\Examples\Code\Components\SecondaryCapsulePoint.cs" />
     <Compile Include="Assets\Examples\Code\UnityScripts\RenderLineFromOneEntityToAnotherBehaviour.cs" />
     <Compile Include="Assets\Examples\Code\Components\JumpBufferTimer.cs" />
@@ -72,7 +72,7 @@
     <Compile Include="Assets\Examples\Code\Components\FacingDirection.cs" />
     <Compile Include="Assets\Examples\Code\Components\CharacterControllerPlatformer3D.cs" />
     <Compile Include="Assets\Examples\Code\Engines\TraceLineEngine.cs" />
-    <Compile Include="Assets\Examples\Code\GameControllers\Platformer3DGame.cs" />
+    <Compile Include="Assets\Examples\Code\Games\Platformer3DGame.cs" />
     <Compile Include="Assets\Examples\Code\Components\Grounded.cs" />
     <Compile Include="Assets\Examples\Code\Components\Velocity.cs" />
     <Compile Include="Assets\Examples\Code\Components\FallForce.cs" />
@@ -83,7 +83,7 @@
     <Compile Include="Assets\Examples\Code\Components\IsCursor.cs" />
     <Compile Include="Assets\Examples\Code\Components\TargetTracker.cs" />
     <Compile Include="Assets\Examples\Code\Components\Collide.cs" />
-    <Compile Include="Assets\Examples\Code\InputClasses\Axis.cs" />
+    <Compile Include="Assets\Examples\Code\Input\Axis.cs" />
     <Compile Include="Assets\Examples\Code\Engines\CharacterControllerPlatformer3DEngine.cs" />
     <Compile Include="Assets\Examples\Code\Components\ProjectMotionOntoPlaneNormal.cs" />
     <Compile Include="Assets\Examples\Code\UnityScripts\CursorBehaviour.cs" />

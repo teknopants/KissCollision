@@ -7,6 +7,15 @@ public class MouseMovementUpdate: MonoBehaviour
     public Button Move = new();
     public Button ScanAndMoveRandomly = new();
 
+    private Button Up = new();
+    private Button Down = new();
+    private Button Left = new();
+    private Button Right = new();
+    private Axis Horizontal = new();
+    private Axis Vertical = new();
+
+    private float arrowKeyMovementSpeed = 15f;
+
     public void Update()
     {
         // Input for StepMotion Engine Example
@@ -14,13 +23,25 @@ public class MouseMovementUpdate: MonoBehaviour
         ScanAndMoveRandomly.CheckForInput(Input.GetKey(KeyCode.R));
         Move.CheckForInput(Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) || Input.GetKey(KeyCode.LeftShift));
 
+        // Arrows / WASD
+        Up.CheckForInput(Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W));
+        Down.CheckForInput(Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S));
+        Left.CheckForInput(Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A));
+        Right.CheckForInput(Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D));
+
+        Horizontal.CheckForInput(Right, Left);
+        Vertical.CheckForInput(Up, Down);
+
+        var inputVector = new Vector2(Horizontal.position, Vertical.position);
+        var inputDistance = new Vector2(Horizontal.position, Vertical.position).normalized.magnitude;
+
         // Find mouse cursor
         var mouseCursorEntity = Object.FindObjectOfType<MouseCursor>();
         if (!mouseCursorEntity) return;
 
         var goalPosition = mouseCursorEntity.transform.position;
 
-        if (ScanAndMoveRandomly.IsDown())
+        if (ScanAndMoveRandomly.IsDown() || inputDistance > 0)
         {
             // make mouse line invisible
             Object.FindObjectOfType<RenderLineFromOneEntityToAnotherBehaviour>().GetComponent<LineRenderer>().enabled = false;
@@ -43,7 +64,7 @@ public class MouseMovementUpdate: MonoBehaviour
                 continue;
             }
 
-            if (Move.IsDown() || ScanThenMove.IsDown() || ScanThenMove.IsReleased() || ScanAndMoveRandomly.IsDown())
+            if (Move.IsDown() || ScanThenMove.IsDown() || ScanThenMove.IsReleased() || ScanAndMoveRandomly.IsDown() || inputDistance > 0)
             {
                 Vector3 entityPosition = player.gameObject.transform.position;
 
@@ -53,12 +74,20 @@ public class MouseMovementUpdate: MonoBehaviour
                     goalPosition = entityPosition + new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0) * 4;
                 }
 
+                Vector3 motion = goalPosition - entityPosition;
+
+                // if arrows or wasd pressed, move with them instead
+                if (inputDistance > 0)
+                {
+                    motion = new Vector3(inputVector.x, inputVector.y, 0) * arrowKeyMovementSpeed * Time.deltaTime;
+                }
+
                 // Project motion
-                KissCollision.MotionPath motionPath = KissCollision.MoveSphere(player.GetComponent<SphereCollider>(), goalPosition - entityPosition, collide.layerMask);
+                KissCollision.MotionPath motionPath = KissCollision.ProjectCapsule(player.GetComponent<CapsuleCollider>(), motion, collide.layerMask);
                 motionPath.Draw();
 
                 // Move to projected motion
-                if (Move.IsDown() || ScanThenMove.IsReleased() || ScanAndMoveRandomly.IsDown())
+                if (Move.IsDown() || ScanThenMove.IsReleased() || ScanAndMoveRandomly.IsDown() || inputDistance > 0)
                 {
                     player.gameObject.transform.position = motionPath.EndPosition;
                 }

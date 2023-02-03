@@ -5,24 +5,30 @@ using UnityEngine;
 
 public static class KissCollision
 {
-    private static readonly float skin = .025f;
+    private static readonly float skin = .01f;
+    private static readonly int pushOutAttempts = 10;
 
-    public static MotionPath MoveSphere(SphereCollider moveMe, Vector3 motion, LayerMask layerMask, int steps = 2)
+    /// <summary>
+    /// Projects a capsule in a motion, sliding against any collider in layerMask.
+    /// Returns a MotionPath, which contains the end position, the motion vectors it took to get there, and any collisions along the way
+    /// </summary>
+    public static MotionPath ProjectCapsule(CapsuleCollider capsuleCollider, Vector3 motion, LayerMask layerMask, int steps = 3)
     {
         RaycastHit[] collisions = new RaycastHit[steps];
         Vector3[] motionSteps = new Vector3[steps];
-        Vector3 startPosition = moveMe.transform.position;
+        Vector3 startPosition = capsuleCollider.transform.position;
 
-        Vector3 position = startPosition;
-
+        Vector3 point0 = startPosition - capsuleCollider.height * capsuleCollider.transform.up / 4;
+        Vector3 point1 = point0 + capsuleCollider.height * capsuleCollider.transform.up / 2;
 
         for (var i = 0; i < steps; i++)
         {
             var stepDistance = motion.magnitude;
 
-            if (Physics.SphereCast(
-                    position,
-                    moveMe.radius,
+            if (Physics.CapsuleCast(
+                    point0,
+                    point1,
+                    capsuleCollider.radius,
                     motion,
                     out RaycastHit hit,
                     motion.magnitude,
@@ -31,25 +37,28 @@ public static class KissCollision
             {
                 stepDistance = hit.distance - skin;
                 collisions[i] = hit;
-                Debug.DrawRay(hit.point, hit.normal, Color.yellow, .25f);
+                Debug.DrawRay(hit.point, hit.normal / 2, Color.yellow, .25f);
             }
 
             motionSteps[i] = motion.normalized * stepDistance;
-            position += motion.normalized * stepDistance;
+            point0 += motion.normalized * stepDistance;
+            point1 = point0 + capsuleCollider.height * capsuleCollider.transform.up / 2;
 
             float remainingDistance = motion.magnitude - stepDistance;
             motion = Vector3.ProjectOnPlane(motion.normalized, hit.normal) * remainingDistance;
 
-            
             // if in wall, try to push out
-            foreach (Collider collider in Physics.OverlapSphere(position, moveMe.radius, layerMask))
+            for (var j = 0; j < pushOutAttempts; j++)
             {
-                Physics.ComputePenetration(moveMe, position, moveMe.transform.rotation, collider, collider.transform.position, collider.transform.rotation, out Vector3 pushOutDirection, out float pushOutDistance);
-                position += pushOutDirection * pushOutDistance;
+                foreach (Collider collider in Physics.OverlapCapsule(point0, point1, capsuleCollider.radius, layerMask))
+                {
+                    Physics.ComputePenetration(capsuleCollider, point0, capsuleCollider.transform.rotation, collider, collider.transform.position, collider.transform.rotation, out Vector3 pushOutDirection, out float pushOutDistance);
+                    point0 += pushOutDirection * pushOutDistance;
+                }
             }
 
             // if still in wall, undo this motion
-            if (Physics.OverlapSphere(position, moveMe.radius, layerMask).Length > 0)
+            if (Physics.OverlapCapsule(point0, point1, capsuleCollider.radius, layerMask).Length > 0)
             {
                 return new MotionPath(startPosition, startPosition, new Vector3[0], new RaycastHit[0]);
             }
@@ -60,9 +69,15 @@ public static class KissCollision
             }
         }
 
-        return new MotionPath(startPosition, position, motionSteps, collisions);
+        return new MotionPath(startPosition, point0 + capsuleCollider.height * capsuleCollider.transform.up / 4, motionSteps, collisions);
     }
 
+    /// <summary>
+    /// Struct containing information about a projected motion path.
+    /// StartPosition is where the projection started. EndPosition is the end of the projection.
+    /// MotionSteps[] are all the motion vectors it took to get from StartPosition to EndPosition.
+    /// Collisions[] contain RayCastHit information about anything collided with along the way
+    /// </summary>
     public struct MotionPath
     {
         public Vector3 StartPosition;
