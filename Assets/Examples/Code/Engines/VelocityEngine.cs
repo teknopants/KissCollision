@@ -28,13 +28,8 @@ public class VelocityEngine : Engine
         {
             var entity = velocity.gameObject;
             var collide = entity.GetComponent<Collide>();
-            var radius = .1f;
+            var capsuleCollider = entity.GetComponent<CapsuleCollider>();
             var grounded = entity.GetComponent<Grounded>();
-            var collisionRadius = entity.GetComponent<CollisionRadius>();
-            if (collisionRadius)
-            {
-                radius = collisionRadius.radius;
-            }
 
             var secondaryCapsulePoint = entity.GetComponent<SecondaryCapsulePoint>();
             Vector3 capsulePoint1 = entity.transform.position;
@@ -45,48 +40,13 @@ public class VelocityEngine : Engine
 
             if (collide)
             {
-                /*if (entity.GetComponent<CharacterControllerPlatformer3D>())
+                KissCollision.MotionPath motionPath = KissCollision.MoveCapsule(capsuleCollider, velocity.velocity, collide.layerMask, out Vector3 velocityResult);
+                velocity.velocity = velocityResult;
+
+                foreach (RaycastHit hit in motionPath.Collisions)
                 {
-                    RaycastHit[] groundPlaneHits = { };
-                    Vector3 groundPlaneNormal = new Vector3(0, 1, 0);
-                    if (grounded)
-                    {
-                        groundPlaneNormal = grounded.normal;
-                    }
-                    Vector3 groundPlaneVelocity = Vector3.ProjectOnPlane(velocity.velocity, groundPlaneNormal);
-                    (entity.transform.position, groundPlaneHits) = KissCollision.MoveCapsule(entity.transform.position, capsulePoint1, groundPlaneVelocity, radius, collide.layerMask, 2);
-
-                    foreach (RaycastHit hit in groundPlaneHits)
-                    {
-                        if (!hit.transform) continue;
-                        velocity.velocity = Vector3.ProjectOnPlane(velocity.velocity, hit.normal);
-                        Debug.DrawRay(hit.point, velocity.velocity, Color.green, 10);
-                    }
-
-                    RaycastHit[] verticalHits = { };
-                    Vector3 verticalVelocity = new Vector3(0, velocity.velocity.y, 0);
-                    (entity.transform.position, verticalHits) = KissCollision.MoveCapsule(entity.transform.position, capsulePoint1, verticalVelocity, radius, collide.layerMask, 2);
-
-                    foreach (RaycastHit hit in verticalHits)
-                    {
-                        if (!hit.transform) continue;
-                        velocity.velocity = Vector3.ProjectOnPlane(velocity.velocity, hit.normal);
-                        Debug.DrawRay(hit.point, velocity.velocity, Color.white, 10);
-                    }
+                    Debug.DrawRay(hit.point, velocity.velocity, Color.green, 2);
                 }
-                else
-                {
-                    RaycastHit[] hits = { };
-                    (entity.transform.position, hits) = KissCollision.MoveCapsule(entity.transform.position, capsulePoint1, velocity.velocity, radius, collide.layerMask, 3);
-
-                    foreach (RaycastHit hit in hits)
-                    {
-                        if (!hit.transform) continue;
-
-                        velocity.velocity = Vector3.ProjectOnPlane(velocity.velocity, hit.normal);
-                        Debug.DrawRay(hit.point, velocity.velocity, Color.yellow, 10);
-                    }
-                }*/
             }
         }
 

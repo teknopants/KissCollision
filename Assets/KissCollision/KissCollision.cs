@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 // Keep it short and simple with KISS COLLISION
 // by Beau Blyth
@@ -9,6 +10,24 @@ public static class KissCollision
     private static readonly int pushOutAttempts = 2;
 
     /// <summary>
+    /// The simplest way to move a capsule collider. It's basically ProjectCapsule but it also moves the transform to MotionPath.endPosition.
+    /// For sliding physics set the gameobject's velocity to velocityResult
+    /// </summary>
+    public static MotionPath MoveCapsule(CapsuleCollider capsuleCollider, Vector3 motion, LayerMask layerMask, out Vector3 velocityResult)
+    {
+        MotionPath motionPath = ProjectCapsule(capsuleCollider, motion, layerMask);
+        capsuleCollider.transform.position = motionPath.EndPosition;
+
+        velocityResult = motionPath.EndVelocity.normalized * motion.magnitude;
+        if (motionPath.Collisions.Length > 0)
+        {
+            velocityResult = motionPath.EndVelocity;
+        }
+
+        return motionPath;
+    }
+
+    /// <summary>
     /// Projects a capsule in a motion, sliding against any collider in layerMask.
     /// Returns a MotionPath, which contains the end position, the motion vectors it took to get there, and any collisions along the way
     /// </summary>
@@ -16,12 +35,15 @@ public static class KissCollision
     {
         Vector3 initialMovement = motion;
 
-        RaycastHit[] collisions = new RaycastHit[steps];
-        Vector3[] motionSteps = new Vector3[steps];
+        RaycastHit[] collisions = new RaycastHit[0];
+        Vector3[] motionSteps = new Vector3[1];
         Vector3 startPosition = capsuleCollider.transform.position;
 
-        Vector3 point0 = startPosition - capsuleCollider.height * capsuleCollider.transform.up / 4;
-        Vector3 point1 = point0 + capsuleCollider.height * capsuleCollider.transform.up / 2;
+        float height = Mathf.Clamp01(capsuleCollider.height - 1);
+        Vector3 point0 = startPosition - height * capsuleCollider.transform.up / 2;
+        Vector3 point1 = point0 + height * capsuleCollider.transform.up;
+        Debug.DrawLine(point0, point0 + Vector3.right * 100, Color.red, 1/ 60f);
+        Debug.DrawLine(point1, point1 + Vector3.right * 100, Color.blue, 1/ 60f);
 
         for (var i = 0; i < steps; i++)
         {
@@ -38,13 +60,15 @@ public static class KissCollision
                 )
             {
                 stepDistance = hit.distance - skin;
+                Array.Resize<RaycastHit>(ref collisions, i + 1);
                 collisions[i] = hit;
                 Debug.DrawRay(hit.point, hit.normal / 2, Color.yellow, .25f);
             }
 
+            Array.Resize<Vector3>(ref motionSteps, i + 1);
             motionSteps[i] = motion.normalized * stepDistance;
             point0 += motion.normalized * stepDistance;
-            point1 = point0 + capsuleCollider.height * capsuleCollider.transform.up / 2;
+            point1 = point0 + height * capsuleCollider.transform.up;
 
             float remainingDistance = motion.magnitude - (stepDistance + skin);
             motion = Vector3.ProjectOnPlane(motion.normalized, hit.normal) * remainingDistance;
@@ -55,6 +79,7 @@ public static class KissCollision
                 motion = Vector3.ProjectOnPlane(motion, initialMovement.normalized);
             }
 
+
             // if in wall, try to push out
             for (var j = 0; j < pushOutAttempts; j++)
             {
@@ -63,7 +88,8 @@ public static class KissCollision
 
                 foreach (Collider collider in colliders)
                 {
-                    Physics.ComputePenetration(capsuleCollider, point0, capsuleCollider.transform.rotation, collider, collider.transform.position, collider.transform.rotation, out Vector3 pushOutDirection, out float pushOutDistance);
+                    Vector3 projectedPosition = point0 + height * capsuleCollider.transform.up / 2;
+                    Physics.ComputePenetration(capsuleCollider, projectedPosition, capsuleCollider.transform.rotation, collider, collider.transform.position, collider.transform.rotation, out Vector3 pushOutDirection, out float pushOutDistance);
                     point0 += pushOutDirection * pushOutDistance;
                     point1 += pushOutDirection * pushOutDistance;
                 }
@@ -74,7 +100,7 @@ public static class KissCollision
             {
                 Debug.DrawLine(startPosition, point0, Color.magenta, 1);
                 Debug.DrawRay(startPosition, (point0 - startPosition) * 10, Color.magenta, 1);
-                return new MotionPath(startPosition, startPosition, new Vector3[0], new RaycastHit[0]);
+                return new MotionPath(startPosition, startPosition, new Vector3[0], new RaycastHit[0], Vector3.zero);
             }
 
             if (remainingDistance <= 0)
@@ -83,14 +109,15 @@ public static class KissCollision
             }
         }
 
-        return new MotionPath(startPosition, point0 + capsuleCollider.height * capsuleCollider.transform.up / 4, motionSteps, collisions);
+        return new MotionPath(startPosition, point0 + height * capsuleCollider.transform.up / 2, motionSteps, collisions, motion);
     }
 
     /// <summary>
     /// Struct containing information about a projected motion path.
     /// StartPosition is where the projection started. EndPosition is the end of the projection.
     /// MotionSteps[] are all the motion vectors it took to get from StartPosition to EndPosition.
-    /// Collisions[] contain RayCastHit information about anything collided with along the way
+    /// Collisions[] contain RayCastHit information about anything collided with along the way.
+    /// EndVelocity is the resulting velocity after the motion was projected onto all collisions.
     /// </summary>
     public struct MotionPath
     {
@@ -98,13 +125,15 @@ public static class KissCollision
         public Vector3 EndPosition;
         public Vector3[] MotionSteps;
         public RaycastHit[] Collisions;
+        public Vector3 EndVelocity;
 
-        public MotionPath(Vector3 startPosition, Vector3 endPosition, Vector3[] motionSteps, RaycastHit[] collisions)
+        public MotionPath(Vector3 startPosition, Vector3 endPosition, Vector3[] motionSteps, RaycastHit[] collisions, Vector3 endVelocity)
         {
             StartPosition = startPosition;
             EndPosition = endPosition;
             MotionSteps = motionSteps;
             Collisions = collisions;
+            EndVelocity = endVelocity;
         }
 
         public void Draw()
