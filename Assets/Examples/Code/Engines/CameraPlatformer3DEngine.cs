@@ -31,7 +31,6 @@ public class CameraPlatformer3DEngine : Engine
             }
 
             var groundY = entity.transform.position.y;
-            Debug.DrawRay(new Vector3(newPosition.x, groundY, newPosition.z), Vector3.up, Color.green, .25f);
 
             // if ground youre jumping over is higher than the old ground, treat that as new ground height
             if (Physics.Raycast(
@@ -41,7 +40,6 @@ public class CameraPlatformer3DEngine : Engine
                 1 << LayerMask.NameToLayer("Level"))
                 )
             {
-                Debug.DrawRay(hit.point, Vector3.up, Color.red, .25f);
                 groundY = Mathf.Max(groundY, hit.point.y + targetTracker.verticalOffset);
             }
 
@@ -83,4 +81,3 @@ public class CameraPlatformer3DEngine : Engine
         }
     }
 }
-

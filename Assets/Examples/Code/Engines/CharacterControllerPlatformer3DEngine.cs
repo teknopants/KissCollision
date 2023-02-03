@@ -101,6 +101,7 @@ public class CharacterControllerPlatformer3DEngine : Engine
             // Jump
             if (Jump.IsPressed() && !entity.GetComponent<JumpBufferTimer>())
             {
+                Debug.Log("Jumped!");
                 entity.AddComponent<JumpBufferTimer>();
             }
 

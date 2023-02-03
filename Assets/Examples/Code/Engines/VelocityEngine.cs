@@ -31,22 +31,10 @@ public class VelocityEngine : Engine
             var capsuleCollider = entity.GetComponent<CapsuleCollider>();
             var grounded = entity.GetComponent<Grounded>();
 
-            var secondaryCapsulePoint = entity.GetComponent<SecondaryCapsulePoint>();
-            Vector3 capsulePoint1 = entity.transform.position;
-            if (secondaryCapsulePoint)
-            {
-                capsulePoint1 = secondaryCapsulePoint.entity.transform.position;
-            }
-
-            if (collide)
+            if (collide && capsuleCollider)
             {
                 KissCollision.MotionPath motionPath = KissCollision.MoveCapsule(capsuleCollider, velocity.velocity, collide.layerMask, out Vector3 velocityResult);
                 velocity.velocity = velocityResult;
-
-                foreach (RaycastHit hit in motionPath.Collisions)
-                {
-                    Debug.DrawRay(hit.point, velocity.velocity, Color.green, 2);
-                }
             }
         }
 
@@ -56,6 +44,12 @@ public class VelocityEngine : Engine
             GameObject entity = checkGrounded.gameObject;
             RaycastHit hit;
             var ray = new Ray(entity.transform.position, Vector3.down);
+
+            var velocity = entity.GetComponent<Velocity>();
+            if (!velocity)
+            {
+                Debug.LogError(entity.ToString() + " needs a velocity component in order to check ground");
+            }
 
             var collide = entity.GetComponent<Collide>();
             if (!collide)
@@ -68,13 +62,16 @@ public class VelocityEngine : Engine
 
             if (Physics.SphereCast(ray, checkGrounded.radius, out hit, checkGrounded.distance, collide.layerMask))
             {
-                if (!grounded)
+                if (velocity.velocity.y <= 0)
                 {
-                    grounded = entity.AddComponent<Grounded>();
-                }
+                    if (!grounded)
+                    {
+                        grounded = entity.AddComponent<Grounded>();
+                    }
 
-                grounded.normal = hit.normal;
-                entity.transform.Translate(Vector3.down * (hit.distance - .01f));
+                    grounded.normal = hit.normal;
+                    entity.transform.Translate(Vector3.down * (hit.distance - .01f));
+                }
             }
             else if (entity.GetComponent<Grounded>())
             {
