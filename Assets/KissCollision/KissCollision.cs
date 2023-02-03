@@ -6,7 +6,7 @@ using UnityEngine;
 public static class KissCollision
 {
     private static readonly float skin = .001f;
-    private static readonly int pushOutAttempts = 10;
+    private static readonly int pushOutAttempts = 2;
 
     /// <summary>
     /// Projects a capsule in a motion, sliding against any collider in layerMask.
@@ -28,8 +28,8 @@ public static class KissCollision
             var stepDistance = motion.magnitude;
 
             if (Physics.CapsuleCast(
-                    point0,
-                    point1,
+                    point0 - motion.normalized * skin,
+                    point1 - motion.normalized * skin,
                     capsuleCollider.radius,
                     motion,
                     out RaycastHit hit,
@@ -46,11 +46,10 @@ public static class KissCollision
             point0 += motion.normalized * stepDistance;
             point1 = point0 + capsuleCollider.height * capsuleCollider.transform.up / 2;
 
-            float remainingDistance = motion.magnitude - stepDistance;
+            float remainingDistance = motion.magnitude - (stepDistance + skin);
             motion = Vector3.ProjectOnPlane(motion.normalized, hit.normal) * remainingDistance;
 
             // if motion goes back on inital vector, project onto initial vector plane
-            Debug.Log(Vector3.Dot(initialMovement, motion));
             if (Vector3.Dot(initialMovement, motion) < 0)
             {
                 motion = Vector3.ProjectOnPlane(motion, initialMovement.normalized);
@@ -59,19 +58,22 @@ public static class KissCollision
             // if in wall, try to push out
             for (var j = 0; j < pushOutAttempts; j++)
             {
-                Collider[] colliders = Physics.OverlapCapsule(point0, point1, capsuleCollider.radius, layerMask);
+                Collider[] colliders = Physics.OverlapCapsule(point0, point1, capsuleCollider.radius + skin, layerMask);
                 if (colliders.Length == 0) { break; }
 
                 foreach (Collider collider in colliders)
                 {
                     Physics.ComputePenetration(capsuleCollider, point0, capsuleCollider.transform.rotation, collider, collider.transform.position, collider.transform.rotation, out Vector3 pushOutDirection, out float pushOutDistance);
                     point0 += pushOutDirection * pushOutDistance;
+                    point1 += pushOutDirection * pushOutDistance;
                 }
             }
 
             // if still in wall, undo this motion
-            if (Physics.OverlapCapsule(point0, point1, capsuleCollider.radius, layerMask).Length > 0)
+            if (Physics.OverlapCapsule(point0, point1, capsuleCollider.radius - skin, layerMask).Length > 0)
             {
+                Debug.DrawLine(startPosition, point0, Color.magenta, 1);
+                Debug.DrawRay(startPosition, (point0 - startPosition) * 10, Color.magenta, 1);
                 return new MotionPath(startPosition, startPosition, new Vector3[0], new RaycastHit[0]);
             }
 
