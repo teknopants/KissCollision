@@ -7,9 +7,7 @@ public class Game : MonoBehaviour
     // This system is inspired by MoonTools.ECS:
     // https://gitea.moonside.games/MoonsideGames/MoonTools.ECS
 
-    // Engines are executed in this order. Don't forget to add new engines here after you make em!
-    public Engine[] engines = {
-    };
+    // Add Engines by adding components to the entity that has this component on it
 
     public bool LogPerformance = false;
     public float frameRate = 60;
@@ -34,7 +32,7 @@ public class Game : MonoBehaviour
 
         frames = 0;
 
-        frameRate = Mathf.Min(frameRate, MAX_FRAME_RATE);
+        frameRate = Mathf.Clamp(frameRate, 15, MAX_FRAME_RATE);
         long max = (long)(1000 / frameRate);
         while(time >= max)
         {
@@ -47,22 +45,19 @@ public class Game : MonoBehaviour
         // Update Engines
         for(var i = 0; i < frames; i ++)
         {
-            foreach (Engine engine in engines)
+            if (!LogPerformance)
             {
-                if (!LogPerformance)
-                {
-                    engine.Run(1 / frameRate);
-                    continue;
-                }
-                else
-                {
-                    // Log performance of individual engines
-                    runTimerStopWatch.Start();
-                    engine.Run(1 / frameRate);
-                    runTimerStopWatch.Stop();
-                    UnityEngine.Debug.Log(engine.ToString() + " ran in " + ((float)runTimerStopWatch.ElapsedTicks / TimeSpan.TicksPerMillisecond).ToString() + " ms");
-                    runTimerStopWatch.Reset();
-                }
+                SendMessage("Run", 1 / frameRate);
+                continue;
+            }
+            else
+            {
+                // Log performance of individual engines
+                runTimerStopWatch.Start();
+                SendMessage("Run", 1 / frameRate);
+                runTimerStopWatch.Stop();
+                UnityEngine.Debug.Log("components ran in " + ((float)runTimerStopWatch.ElapsedTicks / TimeSpan.TicksPerMillisecond).ToString() + " ms");
+                runTimerStopWatch.Reset();
             }
         }
     }

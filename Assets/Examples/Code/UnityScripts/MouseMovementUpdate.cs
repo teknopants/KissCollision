@@ -16,7 +16,7 @@ public class MouseMovementUpdate: MonoBehaviour
 
     private float arrowKeyMovementSpeed = 15f;
 
-    public void Update()
+    public void Run(float dt)
     {
         // Input for StepMotion Engine Example
         ScanThenMove.CheckForInput(Input.GetKey(KeyCode.Space));
@@ -79,7 +79,7 @@ public class MouseMovementUpdate: MonoBehaviour
                 // if arrows or wasd pressed, move with them instead
                 if (inputDistance > 0)
                 {
-                    motion = new Vector3(inputVector.x, inputVector.y, 0) * arrowKeyMovementSpeed * Time.deltaTime;
+                    motion = new Vector3(inputVector.x, inputVector.y, 0) * arrowKeyMovementSpeed * dt;
                 }
 
                 // Project motion
