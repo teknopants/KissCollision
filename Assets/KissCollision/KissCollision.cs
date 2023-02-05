@@ -10,6 +10,25 @@ public static class KissCollision
     private static readonly int pushOutAttempts = 2;
 
     /// <summary>
+    /// The simplest way to move a point in space. It's basically ProjectPoint() but it also moves the transform to MotionPath.endPosition.
+    /// For sliding physics set the gameobject's velocity to velocityResult
+    /// </summary>
+    public static MotionPath MovePoint(GameObject gameObject, Vector3 motion, LayerMask layerMask, out Vector3 velocityResult)
+    {
+        MotionPath motionPath = ProjectPoint(gameObject.transform.position, motion, layerMask);
+        gameObject.transform.position = motionPath.EndPosition;
+
+        Vector3 totalNormal = Vector3.zero;
+        foreach (var hit in motionPath.Collisions)
+        {
+            totalNormal += hit.normal;
+        }
+        velocityResult = Vector3.ProjectOnPlane(velocityResult.normalized, hit.normal) * motion.magnitude;
+
+        return motionPath;
+    }
+
+    /// <summary>
     /// The simplest way to move a capsule collider. It's basically ProjectCapsule but it also moves the transform to MotionPath.endPosition.
     /// For sliding physics set the gameobject's velocity to velocityResult
     /// </summary>
@@ -21,10 +40,77 @@ public static class KissCollision
         velocityResult = motion;
         foreach(var hit in motionPath.Collisions)
         {
-            velocityResult = Vector3.ProjectOnPlane(velocityResult, hit.normal);
+            velocityResult = Vector3.ProjectOnPlane(velocityResult.normalized, hit.normal).normalized * motion.magnitude;
         }
 
         return motionPath;
+    }
+
+    /// <summary>
+    /// Projects a point in a motion, sliding against any collider in layerMask
+    /// </summary>
+    public static MotionPath ProjectPoint(Vector3 point, Vector3 motion, LayerMask layerMask, int steps = 3)
+    {
+        Vector3 initialMovement = motion;
+
+        RaycastHit[] collisions = new RaycastHit[0];
+        Vector3[] motionSteps = new Vector3[1];
+        Vector3 startPosition = point;
+
+        for (var i = 0; i < steps; i++)
+        {
+            var stepDistance = motion.magnitude;
+
+            if (Physics.Raycast(
+                    point,
+                    motion,
+                    out RaycastHit hit,
+                    motion.magnitude,
+                    layerMask)
+                )
+            {
+                stepDistance = hit.distance - skin;
+                Array.Resize<RaycastHit>(ref collisions, i + 1);
+                collisions[i] = hit;
+                Debug.DrawRay(hit.point, hit.normal / 2, Color.yellow, .25f);
+            }
+
+            Array.Resize<Vector3>(ref motionSteps, i + 1);
+            motionSteps[i] = motion.normalized * stepDistance;
+            point += motion.normalized * stepDistance;
+            Debug.DrawRay(point, motion.normalized * stepDistance, Color.green, 1);
+
+            float remainingDistance = motion.magnitude;
+            motion = Vector3.ProjectOnPlane(motion.normalized, hit.normal) * remainingDistance;
+
+            // if motion goes back on inital vector, project onto initial vector plane
+            if (Vector3.Dot(initialMovement, motion) < 0)
+            {
+                motion = Vector3.ProjectOnPlane(motion, initialMovement.normalized);
+            }
+
+            // if in wall, try to push out
+            /*for (var j = 0; j < pushOutAttempts; j++)
+            {
+                var radius = skin;
+                Collider[] colliders = Physics.OverlapSphere(point, radius, layerMask);
+                if (colliders.Length == 0) { break; }
+
+                var pushOutVector = Vector3.zero;
+                foreach (Collider collider in colliders)
+                {
+                    var closestPointOnCollider = collider.ClosestPoint(point);
+                    var difference = closestPointOnCollider - point;
+                    var depth = skin - difference.magnitude;
+                    pushOutVector += difference.normalized * depth;
+                    Debug.DrawRay(closestPointOnCollider, -pushOutVector, Color.magenta, 1);
+                }
+
+                point += pushOutVector;
+            }*/
+        }
+
+        return new MotionPath(startPosition, point, motionSteps, collisions, motion);
     }
 
     /// <summary>
@@ -99,11 +185,6 @@ public static class KissCollision
                 Debug.DrawRay(startPosition, (point0 - startPosition) * 10, Color.magenta, 1);
                 return new MotionPath(startPosition, startPosition, new Vector3[0], new RaycastHit[0], Vector3.zero);
             }
-
-            if (remainingDistance <= 0)
-            {
-                break;
-            }
         }
 
         return new MotionPath(startPosition, point0 + height * capsuleCollider.transform.up / 2, motionSteps, collisions, motion);
@@ -144,3 +225,11 @@ public static class KissCollision
         }
     }
 }
+
+
+// FAQ
+
+// My entity won't move
+
+// are you using a PROJECTcapsule() or PROJECTpoint() method? if so you have to set the transform position to the returned MotionPath's EndPosition.
+// That or use MOVEcapsule() or MOVEpoint() which essentially does that for you

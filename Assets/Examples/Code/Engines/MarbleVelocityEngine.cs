@@ -8,9 +8,9 @@ public class MarbleVelocityEngine : MonoBehaviour
         foreach (Velocity velocity in Object.FindObjectsOfType<Velocity>())
         {
             var entity = velocity.gameObject;
-            var collideComponent = entity.GetComponent<Collide>();
+            var collide = entity.GetComponent<Collide>();
 
-            if (!collideComponent)
+            if (!collide)
             {
                 Debug.LogError(entity.ToString() + " needs a Collide component to know what layer we're colliding against");
                 continue;
@@ -18,7 +18,7 @@ public class MarbleVelocityEngine : MonoBehaviour
 
             // Project motion
             var previousVelocity = velocity.velocity;
-            KissCollision.MotionPath motionPath = KissCollision.ProjectCapsule(entity.GetComponent<CapsuleCollider>(), velocity.velocity, collideComponent.layerMask, 3);
+            KissCollision.MotionPath motionPath = KissCollision.ProjectCapsule(entity.GetComponent<CapsuleCollider>(), velocity.velocity, collide.layerMask, 3);
             motionPath.Draw();
 
             // Bounce off of walls

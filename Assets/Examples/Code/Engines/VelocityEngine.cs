@@ -1,48 +1,38 @@
+using System;
 using UnityEngine;
 
-public class VelocityEngine : Engine
+public class VelocityEngine : MonoBehaviour
 {
-    public override void Run(float dt)
+    public void Run(float dt)
     {
-        // Fall Force
-        foreach (FallForce fallForce in Object.FindObjectsOfType<FallForce>())
+        // Motion
+        foreach (Velocity velocity in FindObjectsOfType<Velocity>())
         {
-            GameObject entity = fallForce.gameObject;
-
-            if (entity.GetComponent<Grounded>()) continue;
-
-            Velocity velocity = entity.GetComponent<Velocity>();
-
-            if (!velocity)
-            {
-                velocity = entity.AddComponent<Velocity>();
-            }
-
-            if (velocity)
-            {
-                velocity.velocity.y += fallForce.force * dt;
-            }
-        }
-
-        foreach(Velocity velocity in Object.FindObjectsOfType<Velocity>())
-        {
+            var velocityResult = velocity.velocity;
             var entity = velocity.gameObject;
             var collide = entity.GetComponent<Collide>();
             var capsuleCollider = entity.GetComponent<CapsuleCollider>();
-            var grounded = entity.GetComponent<Grounded>();
+            KissCollision.MotionPath motionPath = new KissCollision.MotionPath();
 
-            if (collide && capsuleCollider)
+            if (capsuleCollider)
             {
-                KissCollision.MotionPath motionPath = KissCollision.MoveCapsule(capsuleCollider, velocity.velocity, collide.layerMask, out Vector3 velocityResult);
-                velocity.velocity = velocityResult;
+                motionPath = KissCollision.MoveCapsule(entity.GetComponent<CapsuleCollider>(), velocity.velocity, collide.layerMask, out velocityResult);
             }
+            else
+            {
+                motionPath = KissCollision.MovePoint(entity, velocity.velocity, collide.layerMask, out velocityResult);
+            }
+
+            velocity.velocity = velocityResult;
+            Debug.DrawRay(entity.transform.position, velocityResult * 10, Color.blue, 1);
+
+            motionPath.Draw();
         }
 
         // Check if on ground
-        foreach (CheckGrounded checkGrounded in Object.FindObjectsOfType<CheckGrounded>())
+        foreach (CheckGrounded checkGrounded in FindObjectsOfType<CheckGrounded>())
         {
             GameObject entity = checkGrounded.gameObject;
-            RaycastHit hit;
             var ray = new Ray(entity.transform.position, Vector3.down);
 
             var velocity = entity.GetComponent<Velocity>();
@@ -60,7 +50,7 @@ public class VelocityEngine : Engine
 
             var grounded = entity.GetComponent<Grounded>();
 
-            if (Physics.SphereCast(ray, checkGrounded.radius, out hit, checkGrounded.distance, collide.layerMask))
+            if (Physics.Raycast(ray, out RaycastHit hit, checkGrounded.distance,  collide.layerMask))
             {
                 if (velocity.velocity.y <= 0)
                 {
@@ -70,7 +60,6 @@ public class VelocityEngine : Engine
                     }
 
                     grounded.normal = hit.normal;
-                    entity.transform.Translate(Vector3.down * (hit.distance - .01f));
                 }
             }
             else if (entity.GetComponent<Grounded>())
@@ -79,7 +68,7 @@ public class VelocityEngine : Engine
                 grounded.coyoteTime -= dt;
                 if (grounded.coyoteTime <= 0)
                 {
-                    Object.Destroy(grounded);
+                    Destroy(grounded);
                 }
             }
         }

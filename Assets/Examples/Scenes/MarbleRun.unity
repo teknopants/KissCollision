@@ -306,7 +306,7 @@ MonoBehaviour:
   marblePrefab: {fileID: 342162448001100639, guid: c1821ecbe0ee9ed49a086cb2d8b5c5bd, type: 3}
   spawnPosition: {fileID: 495969842}
   spawnFrequency: 1
-  randomStartPositionVariation: 0.1
+  randomStartPositionVariation: 0
 --- !u!114 &140533938
 MonoBehaviour:
   m_ObjectHideFlags: 0

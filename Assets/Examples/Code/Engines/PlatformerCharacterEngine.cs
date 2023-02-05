@@ -1,7 +1,7 @@
 using UnityEngine;
 using QuickInput;
 
-public class CharacterControllerPlatformer3DEngine : Engine
+public class PlatformerCharacterEngine : MonoBehaviour
 {
     private Button Up = new();
     private Button Down = new();
@@ -11,9 +11,8 @@ public class CharacterControllerPlatformer3DEngine : Engine
     private Axis Horizontal = new();
     private Axis Vertical = new();
 
-    public override void Run(float dt)
+    public void Run(float dt)
     {
-
         Up.CheckForInput(Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W));
         Down.CheckForInput(Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S));
         Left.CheckForInput(Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A));

@@ -4,9 +4,12 @@ public class FallForceEngine : MonoBehaviour
 {
     void Run(float dt)
     {
-        foreach(FallForce fallForce in Object.FindObjectsOfType<FallForce>())
+        foreach (FallForce fallForce in Object.FindObjectsOfType<FallForce>())
         {
             var entity = fallForce.gameObject;
+
+            if (entity.GetComponent<Grounded>()) continue;
+
             var velocity = entity.GetComponent<Velocity>();
             
             if (!velocity)
