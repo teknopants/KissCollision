@@ -18,12 +18,11 @@ public static class KissCollision
         MotionPath motionPath = ProjectPoint(gameObject.transform.position, motion, layerMask);
         gameObject.transform.position = motionPath.EndPosition;
 
-        Vector3 totalNormal = Vector3.zero;
+        velocityResult = motion;
         foreach (var hit in motionPath.Collisions)
         {
-            totalNormal += hit.normal;
+            velocityResult = Vector3.ProjectOnPlane(velocityResult.normalized, hit.normal) * motion.magnitude;
         }
-        velocityResult = Vector3.ProjectOnPlane(velocityResult.normalized, hit.normal) * motion.magnitude;
 
         return motionPath;
     }
